@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Biological Science – Learning Dashboard</title>
+<style>
+/* ─── Reset & Base ─────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{font-family:-apple-system,"Segoe UI",system-ui,sans-serif;background:#f0f4f8;color:#1e293b;min-height:100vh;display:flex}
+
+/* ─── Sidebar ──────────────────────────────────────────────────── */
+.sidebar{
+  width:220px;min-width:220px;background:#0f4c3a;color:#fff;
+  display:flex;flex-direction:column;position:fixed;top:0;left:0;
+  height:100vh;z-index:100;transition:width .25s;overflow:hidden;
+}
+.sidebar.collapsed{width:64px}
+.sidebar-logo{
+  display:flex;align-items:center;gap:10px;padding:20px 18px 16px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+}
+.sidebar-logo .logo-icon{font-size:22px;flex-shrink:0}
+.sidebar-logo .logo-text{font-size:15px;font-weight:700;white-space:nowrap;line-height:1.2}
+.sidebar-logo .logo-sub{font-size:10px;opacity:.6;white-space:nowrap}
+.nav{list-style:none;padding:12px 0;flex:1;overflow-y:auto}
+.nav li a{
+  display:flex;align-items:center;gap:12px;padding:10px 18px;
+  color:rgba(255,255,255,.75);text-decoration:none;font-size:13.5px;
+  transition:background .15s,color .15s;border-radius:0;white-space:nowrap;
+}
+.nav li a:hover,.nav li a.active{background:rgba(255,255,255,.12);color:#fff}
+.nav li a.active{border-left:3px solid #4ade80}
+.nav li a .nav-icon{font-size:16px;flex-shrink:0;width:20px;text-align:center}
+.nav li a .nav-label{white-space:nowrap}
+.sidebar-footer{padding:14px 18px;border-top:1px solid rgba(255,255,255,.1);font-size:11px;opacity:.5;white-space:nowrap}
+.sidebar-toggle{
+  position:absolute;top:18px;right:-12px;width:24px;height:24px;
+  background:#0f4c3a;border:2px solid #4ade80;border-radius:50%;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:10px;color:#4ade80;z-index:101;transition:transform .25s;
+}
+
+/* ─── Main ─────────────────────────────────────────────────────── */
+.main{margin-left:220px;flex:1;min-height:100vh;transition:margin-left .25s}
+.main.expanded{margin-left:64px}
+
+.topbar{
+  background:#fff;border-bottom:1px solid #e2e8f0;
+  padding:14px 28px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;
+}
+.topbar-left h2{font-size:16px;font-weight:700;color:#0f4c3a}
+.topbar-left p{font-size:12px;color:#64748b;margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.topbar-right .avatar{
+  width:34px;height:34px;border-radius:50%;background:#0f4c3a;
+  color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;
+}
+.topbar-right .user-info{text-align:right}
+.topbar-right .user-info .name{font-size:13px;font-weight:600}
+.topbar-right .user-info .role{font-size:11px;color:#64748b}
+
+.content{padding:24px 28px 48px}
+
+/* ─── Pages ────────────────────────────────────────────────────── */
+.page{display:none}
+.page.active{display:block}
+
+/* ─── Summary Cards ─────────────────────────────────────────────── */
+.summary-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.s-card{
+  background:#fff;border-radius:12px;border:1px solid #e2e8f0;
+  padding:20px 20px 18px;position:relative;overflow:hidden;
+}
+.s-card::after{
+  content:'';position:absolute;right:-16px;top:-16px;
+  width:80px;height:80px;border-radius:50%;opacity:.06;
+}
+.s-card.card-students::after{background:#0f4c3a}
+.s-card.card-tasks::after{background:#7c3aed}
+.s-card.card-progress::after{background:#0284c7}
+.s-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.s-card-icon{
+  width:44px;height:44px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+}
+.s-card.card-students .s-card-icon{background:#dcfce7;color:#16a34a}
+.s-card.card-tasks    .s-card-icon{background:#ede9fe;color:#7c3aed}
+.s-card.card-progress .s-card-icon{background:#e0f2fe;color:#0284c7}
+.s-card-badge{font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.4px}
+.badge-green{background:#dcfce7;color:#15803d}
+.badge-purple{background:#ede9fe;color:#6d28d9}
+.badge-blue{background:#e0f2fe;color:#0369a1}
+.s-card-value{font-size:28px;font-weight:800;color:#0f172a;line-height:1}
+.s-card-label{font-size:13px;color:#64748b;margin-top:5px}
+.s-card-sub{font-size:12px;color:#94a3b8;margin-top:4px}
+.s-card-bar{height:5px;background:#f1f5f9;border-radius:3px;margin-top:12px;overflow:hidden}
+.s-card-bar-fill{height:100%;border-radius:3px;transition:width .4s ease}
+.bar-green{background:linear-gradient(90deg,#16a34a,#4ade80)}
+.bar-purple{background:linear-gradient(90deg,#7c3aed,#a78bfa)}
+.bar-blue{background:linear-gradient(90deg,#0284c7,#38bdf8)}
+
+/* ─── Section Header ─────────────────────────────────────────────── */
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.sec-title{font-size:14px;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:6px}
+.sec-title .icon{font-size:16px}
+
+/* ─── Filters ────────────────────────────────────────────────────── */
+.filters{
+  background:#fff;border-radius:12px;border:1px solid #e2e8f0;
+  padding:14px 18px;margin-bottom:20px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+}
+.filter-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.filter-label{font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-right:2px}
+.filter-btn{
+  padding:4px 11px;border-radius:20px;border:1px solid #e2e8f0;
+  background:#f8fafc;font-size:12px;cursor:pointer;color:#475569;
+  transition:all .15s;white-space:nowrap;
+}
+.filter-btn:hover{border-color:#0f4c3a;color:#0f4c3a}
+.filter-btn.active{background:#0f4c3a;border-color:#0f4c3a;color:#fff}
+.filter-divider{width:1px;height:22px;background:#e2e8f0;margin:0 4px}
+
+/* ─── Topic Progress ─────────────────────────────────────────────── */
+.topics-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:24px}
+.topic-card{
+  background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:16px 18px;
+}
+.topic-header{display:flex;align-items:center;gap-10px;margin-bottom:10px;justify-content:space-between}
+.topic-header-left{display:flex;align-items:center;gap:8px}
+.topic-icon{font-size:18px}
+.topic-name{font-size:13px;font-weight:700;color:#1e293b}
+.topic-pct{font-size:13px;font-weight:700}
+.topic-bar-wrap{height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;margin-bottom:8px}
+.topic-bar{height:100%;border-radius:4px;transition:width .4s ease}
+.topic-meta{font-size:11px;color:#94a3b8}
+
+/* ─── Checklist ─────────────────────────────────────────────────── */
+.task-panel{background:#fff;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:24px}
+.task-panel-head{
+  padding:14px 18px;border-bottom:1px solid #e2e8f0;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.task-table{width:100%;border-collapse:collapse}
+.task-table th{
+  padding:9px 14px;text-align:left;font-size:11px;font-weight:600;
+  color:#64748b;text-transform:uppercase;letter-spacing:.4px;
+  background:#f8fafc;border-bottom:1px solid #e2e8f0;
+}
+.task-table td{padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:13px;vertical-align:middle}
+.task-table tr:last-child td{border-bottom:none}
+.task-table tr:hover td{background:#fafcff}
+.task-cb{width:16px;height:16px;cursor:pointer;accent-color:#0f4c3a}
+.status-pill{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;
+}
+.pill-done{background:#dcfce7;color:#15803d}
+.pill-prog{background:#fef9c3;color:#92400e}
+.pill-none{background:#f1f5f9;color:#64748b}
+.task-topic-tag{
+  display:inline-block;padding:2px 8px;border-radius:12px;
+  font-size:11px;font-weight:500;background:#e0f2fe;color:#0369a1;
+}
+.task-type-tag{
+  display:inline-block;padding:2px 8px;border-radius:12px;
+  font-size:11px;font-weight:500;background:#f0fdf4;color:#166534;
+}
+
+/* ─── Student Table ──────────────────────────────────────────────── */
+.search-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.search-input{
+  flex:1;min-width:180px;padding:8px 12px;border-radius:8px;
+  border:1px solid #e2e8f0;font-size:13px;outline:none;
+  transition:border-color .15s;background:#fff;
+}
+.search-input:focus{border-color:#0f4c3a}
+.select-filter{
+  padding:8px 12px;border-radius:8px;border:1px solid #e2e8f0;
+  font-size:13px;background:#fff;outline:none;cursor:pointer;color:#1e293b;
+}
+.student-table{width:100%;border-collapse:collapse}
+.student-table th{
+  padding:9px 14px;text-align:left;font-size:11px;font-weight:600;
+  color:#64748b;text-transform:uppercase;letter-spacing:.4px;
+  background:#f8fafc;border-bottom:1px solid #e2e8f0;
+}
+.student-table td{padding:10px 14px;border-bottom:1px solid #f1f5f9;font-size:13px;vertical-align:middle}
+.student-table tr:last-child td{border-bottom:none}
+.student-table tr:hover td{background:#fafcff}
+.student-table tr.clickable{cursor:pointer}
+.stu-avatar{
+  width:30px;height:30px;border-radius:50%;display:inline-flex;
+  align-items:center;justify-content:center;font-size:12px;font-weight:700;
+  color:#fff;flex-shrink:0;margin-right:8px;
+}
+.stu-name-cell{display:flex;align-items:center}
+.mini-bar-wrap{height:6px;background:#f1f5f9;border-radius:3px;width:80px;display:inline-block;overflow:hidden;vertical-align:middle}
+.mini-bar{height:100%;border-radius:3px}
+.status-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}
+.dot-red{background:#ef4444}
+.dot-orange{background:#f97316}
+.dot-yellow{background:#eab308}
+.dot-green{background:#22c55e}
+.dot-blue{background:#3b82f6}
+
+/* ─── Individual Student View ────────────────────────────────────── */
+.student-detail{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:22px 24px;margin-bottom:24px}
+.stu-detail-top{display:flex;align-items:center;gap:16px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid #e2e8f0}
+.stu-big-avatar{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff}
+.stu-detail-info h3{font-size:17px;font-weight:700}
+.stu-detail-info p{font-size:12px;color:#64748b;margin-top:2px}
+.stu-stat-row{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px}
+.stu-stat{text-align:center;padding:10px 16px;border-radius:8px;background:#f8fafc;border:1px solid #e2e8f0}
+.stu-stat .val{font-size:20px;font-weight:800}
+.stu-stat .lbl{font-size:11px;color:#64748b;margin-top:2px}
+.back-btn{
+  padding:7px 14px;border-radius:8px;border:1px solid #e2e8f0;
+  background:#fff;font-size:12px;cursor:pointer;color:#475569;
+  display:inline-flex;align-items:center;gap:5px;transition:all .15s;margin-bottom:16px;
+}
+.back-btn:hover{border-color:#0f4c3a;color:#0f4c3a}
+.incomplete-list{margin-top:14px}
+.inc-item{
+  display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;
+  background:#fff7ed;border:1px solid #fed7aa;margin-bottom:6px;font-size:12.5px;color:#92400e;
+}
+.inc-item .inc-topic{font-weight:600}
+
+/* ─── Responsive ─────────────────────────────────────────────────── */
+@media(max-width:900px){
+  .topics-grid{grid-template-columns:1fr}
+  .summary-cards{grid-template-columns:1fr 1fr}
+}
+@media(max-width:650px){
+  .sidebar{width:64px}
+  .sidebar .logo-text,.sidebar .logo-sub,.sidebar .nav-label,.sidebar-footer{display:none}
+  .main{margin-left:64px}
+  .summary-cards{grid-template-columns:1fr}
+  .content{padding:14px 12px 40px}
+  .topbar{padding:10px 14px}
+  .task-table .hide-sm{display:none}
+}
+
+/* ─── Misc ─────────────────────────────────────────────────────── */
+.panel{background:#fff;border-radius:12px;border:1px solid #e2e8f0;margin-bottom:24px}
+.panel-head{padding:14px 18px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between}
+.panel-body{padding:16px 18px}
+.chip{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;margin-right:4px}
+.empty-state{text-align:center;padding:40px 20px;color:#94a3b8;font-size:13px}
+.tag-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:#64748b;margin-bottom:6px;margin-top:14px}
+hr.divider{border:none;border-top:1px solid #f1f5f9;margin:12px 0}
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ════════════════════════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <span class="logo-icon">🧬</span>
+    <div>
+      <div class="logo-text">BioSci LMS</div>
+      <div class="logo-sub">Agrotechnology · DIP</div>
+    </div>
+  </div>
+  <ul class="nav" id="main-nav">
+    <li><a href="#" class="active" data-page="dashboard" onclick="showPage('dashboard',this)"><span class="nav-icon">🏠</span><span class="nav-label">Dashboard</span></a></li>
+    <li><a href="#" data-page="students" onclick="showPage('students',this)"><span class="nav-icon">👩‍🎓</span><span class="nav-label">Students</span></a></li>
+    <li><a href="#" data-page="tasks" onclick="showPage('tasks',this)"><span class="nav-icon">📋</span><span class="nav-label">Tasks</span></a></li>
+    <li><a href="#" data-page="topics" onclick="showPage('topics',this)"><span class="nav-icon">🧬</span><span class="nav-label">Topics</span></a></li>
+    <li><a href="#" data-page="progress" onclick="showPage('progress',this)"><span class="nav-icon">📊</span><span class="nav-label">Progress</span></a></li>
+    <li><a href="#" data-page="assessments" onclick="showPage('assessments',this)"><span class="nav-icon">📝</span><span class="nav-label">Assessments</span></a></li>
+    <li><a href="#" data-page="settings" onclick="showPage('settings',this)"><span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></a></li>
+  </ul>
+  <div class="sidebar-footer">Sem 1 · 2024/25</div>
+</aside>
+
+<!-- ═══ MAIN ═══════════════════════════════════════════════════════ -->
+<div class="main" id="main-wrap">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h2 id="page-title">Dashboard Overview</h2>
+      <p id="page-sub">Biological Science · DIP Agrotechnology</p>
+    </div>
+    <div class="topbar-right">
+      <div class="user-info">
+        <div class="name">Dr. Amirah Salleh</div>
+        <div class="role">Lecturer · Biological Science</div>
+      </div>
+      <div class="avatar">AS</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ══ PAGE: DASHBOARD ════════════════════════════════════════ -->
+    <div class="page active" id="page-dashboard">
+
+      <!-- Summary Cards -->
+      <div class="summary-cards">
+        <div class="s-card card-students">
+          <div class="s-card-top">
+            <div class="s-card-icon">🎓</div>
+            <span class="s-card-badge badge-green">Active</span>
+          </div>
+          <div class="s-card-value">30</div>
+          <div class="s-card-label">Students Enrolled</div>
+          <div class="s-card-sub">Active Learners · Sem 1 2024/25</div>
+          <div class="s-card-bar"><div class="s-card-bar-fill bar-green" style="width:100%"></div></div>
+        </div>
+        <div class="s-card card-tasks">
+          <div class="s-card-top">
+            <div class="s-card-icon">📋</div>
+            <span class="s-card-badge badge-purple" id="tasks-badge">76%</span>
+          </div>
+          <div class="s-card-value" id="tasks-card-val">–</div>
+          <div class="s-card-label">Tasks Completed</div>
+          <div class="s-card-sub" id="tasks-card-sub">of 29 total tasks</div>
+          <div class="s-card-bar"><div class="s-card-bar-fill bar-purple" id="tasks-card-bar" style="width:0%"></div></div>
+        </div>
+        <div class="s-card card-progress">
+          <div class="s-card-top">
+            <div class="s-card-icon">📈</div>
+            <span class="s-card-badge badge-blue" id="progress-badge">Good Progress</span>
+          </div>
+          <div class="s-card-value" id="progress-card-val">–</div>
+          <div class="s-card-label">Overall Progress</div>
+          <div class="s-card-sub" id="progress-card-sub">Class average across all topics</div>
+          <div class="s-card-bar"><div class="s-card-bar-fill bar-blue" id="progress-card-bar" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters" id="dash-filters">
+        <span class="filter-label">Student</span>
+        <div class="filter-group" id="student-filters">
+          <button class="filter-btn active" onclick="setFilter('student','all',this)">All Students</button>
+          <!-- populated by JS -->
+        </div>
+        <div class="filter-divider"></div>
+        <span class="filter-label">Topic</span>
+        <div class="filter-group" id="topic-filters">
+          <button class="filter-btn active" onclick="setFilter('topic','all',this)">All Topics</button>
+          <button class="filter-btn" onclick="setFilter('topic','0',this)">Intro Biology</button>
+          <button class="filter-btn" onclick="setFilter('topic','1',this)">Cell Components</button>
+          <button class="filter-btn" onclick="setFilter('topic','2',this)">Cell Division</button>
+          <button class="filter-btn" onclick="setFilter('topic','3',this)">Plant Biology</button>
+          <button class="filter-btn" onclick="setFilter('topic','4',this)">Plant Biochemistry</button>
+        </div>
+        <div class="filter-divider"></div>
+        <span class="filter-label">Status</span>
+        <div class="filter-group">
+          <button class="filter-btn active" onclick="setFilter('status','all',this)">All</button>
+          <button class="filter-btn" onclick="setFilter('status','Completed',this)">Completed</button>
+          <button class="filter-btn" onclick="setFilter('status','In Progress',this)">In Progress</button>
+          <button class="filter-btn" onclick="setFilter('status','Not Started',this)">Not Started</button>
+        </div>
+      </div>
+
+      <!-- Topic Progress -->
+      <div class="sec-header">
+        <div class="sec-title"><span class="icon">🧬</span> Topic Progress</div>
+      </div>
+      <div class="topics-grid" id="topics-grid"></div>
+
+      <!-- Checklist -->
+      <div class="task-panel">
+        <div class="task-panel-head">
+          <div class="sec-title"><span class="icon">📋</span> Task Checklist</div>
+          <span style="font-size:12px;color:#64748b" id="checklist-meta"></span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="task-table">
+            <thead>
+              <tr>
+                <th style="width:36px"></th>
+                <th>Task</th>
+                <th class="hide-sm">Topic</th>
+                <th class="hide-sm">Type</th>
+                <th>Status</th>
+                <th class="hide-sm">Date</th>
+              </tr>
+            </thead>
+            <tbody id="task-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: STUDENTS ════════════════════════════════════════ -->
+    <div class="page" id="page-students">
+      <div id="student-list-view">
+        <div class="search-row">
+          <input class="search-input" id="stu-search" placeholder="🔍  Search student name…" oninput="renderStudentTable()"/>
+          <select class="select-filter" id="stu-status-filter" onchange="renderStudentTable()">
+            <option value="all">All Status</option>
+            <option value="Not Started">🔴 Not Started</option>
+            <option value="Beginning">🟠 Beginning</option>
+            <option value="In Progress">🟡 In Progress</option>
+            <option value="Good Progress">🟢 Good Progress</option>
+            <option value="Completed">🔵 Completed</option>
+          </select>
+          <select class="select-filter" id="stu-topic-filter" onchange="renderStudentTable()">
+            <option value="all">All Topics</option>
+            <option value="0">Intro to Biology</option>
+            <option value="1">Cell Components</option>
+            <option value="2">Cell Division</option>
+            <option value="3">Plant Biology</option>
+            <option value="4">Plant Biochemistry</option>
+          </select>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <div class="sec-title"><span class="icon">👩‍🎓</span> Student Monitoring</div>
+            <span style="font-size:12px;color:#64748b" id="stu-count-label"></span>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="student-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Student</th>
+                  <th>Overall Progress</th>
+                  <th>Status</th>
+                  <th>Completed</th>
+                  <th>Pending</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="student-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div id="student-detail-view" style="display:none"></div>
+    </div>
+
+    <!-- ══ PAGE: TASKS ════════════════════════════════════════════ -->
+    <div class="page" id="page-tasks">
+      <div class="search-row">
+        <input class="search-input" id="task-search" placeholder="🔍  Search task…" oninput="renderTasksPage()"/>
+        <select class="select-filter" id="task-topic-filter" onchange="renderTasksPage()">
+          <option value="all">All Topics</option>
+          <option value="0">Intro to Biology</option>
+          <option value="1">Cell Components</option>
+          <option value="2">Cell Division</option>
+          <option value="3">Plant Biology</option>
+          <option value="4">Plant Biochemistry</option>
+        </select>
+        <select class="select-filter" id="task-status-filter" onchange="renderTasksPage()">
+          <option value="all">All Status</option>
+          <option value="Completed">Completed</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Not Started">Not Started</option>
+        </select>
+      </div>
+      <div class="task-panel">
+        <div class="task-panel-head">
+          <div class="sec-title"><span class="icon">📋</span> All Tasks</div>
+          <span style="font-size:12px;color:#64748b" id="tasks-page-meta"></span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="task-table">
+            <thead>
+              <tr>
+                <th style="width:36px"></th>
+                <th>Task</th>
+                <th>Topic</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="tasks-page-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: TOPICS ════════════════════════════════════════════ -->
+    <div class="page" id="page-topics">
+      <div id="topics-detail-container"></div>
+    </div>
+
+    <!-- ══ PAGE: PROGRESS ════════════════════════════════════════ -->
+    <div class="page" id="page-progress">
+      <div class="panel">
+        <div class="panel-head"><div class="sec-title"><span class="icon">📊</span> Class Progress Overview</div></div>
+        <div class="panel-body" id="progress-page-body"></div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: ASSESSMENTS ══════════════════════════════════════ -->
+    <div class="page" id="page-assessments">
+      <div class="panel">
+        <div class="panel-head"><div class="sec-title"><span class="icon">📝</span> Assessments</div></div>
+        <div class="panel-body">
+          <div id="assess-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PAGE: SETTINGS ════════════════════════════════════════ -->
+    <div class="page" id="page-settings">
+      <div class="panel">
+        <div class="panel-head"><div class="sec-title"><span class="icon">⚙️</span> Settings</div></div>
+        <div class="panel-body">
+          <p style="color:#64748b;font-size:13px">Course: <strong>Biological Science</strong> &nbsp;·&nbsp; Programme: <strong>DIP Agrotechnology</strong> &nbsp;·&nbsp; Semester: <strong>1 / 2024-25</strong></p>
+          <p style="color:#94a3b8;font-size:12px;margin-top:12px">Settings panel — configuration options would appear here in production.</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// DATA MODEL
+// ═══════════════════════════════════════════════════════════
+const TOPICS = [
+  { id:0, name:'Introduction to Biology',  icon:'🔬', color:'#16a34a', barColor:'#16a34a',
+    tasks:[
+      {title:'Define biology and its major branches',          type:'Reading'},
+      {title:'Explain characteristics of living organisms',   type:'Reading'},
+      {title:'Identify levels of biological organization',    type:'Activity'},
+      {title:'Describe the scientific method',                type:'Reading'},
+      {title:'Complete Introduction to Biology quiz',          type:'Quiz'},
+    ]
+  },
+  { id:1, name:'Cell Components', icon:'🦠', color:'#7c3aed', barColor:'#7c3aed',
+    tasks:[
+      {title:'Identify major cell organelles',                 type:'Activity'},
+      {title:'Describe functions of cell organelles',          type:'Reading'},
+      {title:'Compare plant and animal cells',                 type:'Activity'},
+      {title:'Label a plant cell diagram',                     type:'Diagram'},
+      {title:'Complete microscope/cell observation activity',  type:'Practical'},
+      {title:'Complete Cell Components quiz',                  type:'Quiz'},
+    ]
+  },
+  { id:2, name:'Cell Division', icon:'🧫', color:'#0284c7', barColor:'#0284c7',
+    tasks:[
+      {title:'Explain the purpose of cell division',           type:'Reading'},
+      {title:'Explain the cell cycle',                         type:'Reading'},
+      {title:'Identify stages of mitosis',                     type:'Activity'},
+      {title:'Arrange mitosis stages in sequence',             type:'Activity'},
+      {title:'Distinguish between mitosis and meiosis',        type:'Reading'},
+      {title:'Complete Cell Division activity/quiz',           type:'Quiz'},
+    ]
+  },
+  { id:3, name:'Plant Biology', icon:'🌿', color:'#d97706', barColor:'#d97706',
+    tasks:[
+      {title:'Identify major parts of a plant',                type:'Activity'},
+      {title:'Explain functions of roots, stems and leaves',   type:'Reading'},
+      {title:'Explain photosynthesis',                         type:'Reading'},
+      {title:'Explain plant water and mineral absorption',     type:'Reading'},
+      {title:'Identify factors affecting plant growth',        type:'Activity'},
+      {title:'Complete plant observation/practical activity',  type:'Practical'},
+    ]
+  },
+  { id:4, name:'Plant Biochemistry', icon:'🌱', color:'#db2777', barColor:'#db2777',
+    tasks:[
+      {title:'Define carbohydrates, proteins and lipids',      type:'Reading'},
+      {title:'Identify major biomolecules in plants',          type:'Activity'},
+      {title:'Explain the role of enzymes in plants',          type:'Reading'},
+      {title:'Explain factors affecting enzyme activity',      type:'Reading'},
+      {title:'Relate ATP and energy metabolism to plants',     type:'Reading'},
+      {title:'Complete Plant Biochemistry quiz/activity',      type:'Quiz'},
+    ]
+  },
+];
+
+const TOTAL_TASKS = TOPICS.reduce((s,t)=>s+t.tasks.length,0);
+
+// Build flat task list with IDs
+const ALL_TASKS = [];
+TOPICS.forEach(tp=>{
+  tp.tasks.forEach((tk,i)=>{
+    ALL_TASKS.push({
+      id: `t${tp.id}_${i}`,
+      topicId: tp.id,
+      title: tk.title,
+      type: tk.type,
+    });
+  });
+});
+
+// ── Student names (30) ──────────────────────────────────────
+const NAMES = [
+  'Ahmad Haziq','Nur Izzah','Muhammad Aiman','Siti Nur Ain','Mohd Faiz',
+  'Nur Hidayah','Amirul Hafiz','Nurul Afiqah','Khairul Nizam','Farah Hani',
+  'Zulaikha Razali','Irfan Hakim','Anis Sofea','Hafizuddin Aziz','Nabilah Rahim',
+  'Syafiq Redzuan','Liyana Mazlan','Faris Ariffin','Shafiqah Yusoff','Izzat Rizal',
+  'Nadia Kamil','Hazwan Nordin','Ain Nabilah','Afiq Zulkifli','Suraya Idris',
+  'Naim Abdullah','Qistina Nasir','Azim Hafifi','Rania Zulkarnain','Hamza Azri',
+];
+const COLORS = ['#16a34a','#7c3aed','#0284c7','#d97706','#db2777','#0f4c3a','#dc2626','#0891b2'];
+
+// ── Generate student task states ────────────────────────────
+// Each student has a map: taskId -> {done, status, date}
+function makeStudentData(seed){
+  const rng = mulberry32(seed);
+  const data = {};
+  ALL_TASKS.forEach(tk=>{
+    const r = rng();
+    let done=false, status='Not Started', date='';
+    if(r<0.62){done=true;status='Completed';date=randomDate(rng);}
+    else if(r<0.78){status='In Progress';}
+    data[tk.id]={done,status,date};
+  });
+  return data;
+}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};}
+function randomDate(rng){
+  const d=new Date(2024,7+Math.floor(rng()*3),1+Math.floor(rng()*28));
+  return d.toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'numeric'});
+}
+
+const STUDENTS = NAMES.map((name,i)=>({
+  id:i,
+  name,
+  matric:`AGT${String(2400+i+1).padStart(4,'0')}`,
+  color: COLORS[i%COLORS.length],
+  tasks: makeStudentData(i*997+137),
+}));
+
+// ── Active filters & selected student ──────────────────────
+let activeFilters = {student:'all', topic:'all', status:'all'};
+let selectedStudentId = null;
+
+// ═══════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════
+function progressLabel(pct){
+  if(pct===0)  return {label:'Not Started',   dot:'dot-red'};
+  if(pct<25)   return {label:'Not Started',   dot:'dot-red'};
+  if(pct<50)   return {label:'Beginning',     dot:'dot-orange'};
+  if(pct<75)   return {label:'In Progress',   dot:'dot-yellow'};
+  if(pct<90)   return {label:'Good Progress', dot:'dot-green'};
+  return              {label:'Completed',     dot:'dot-blue'};
+}
+function pctColor(pct){
+  if(pct<25)  return '#ef4444';
+  if(pct<50)  return '#f97316';
+  if(pct<75)  return '#eab308';
+  if(pct<90)  return '#22c55e';
+  return '#3b82f6';
+}
+function initials(name){return name.split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase();}
+
+function studentTopicPct(stu, topicId){
+  const topic = TOPICS[topicId];
+  const done  = topic.tasks.filter((_,i)=>stu.tasks[`t${topicId}_${i}`]?.done).length;
+  return Math.round(done/topic.tasks.length*100);
+}
+function studentOverallPct(stu){
+  const done = ALL_TASKS.filter(tk=>stu.tasks[tk.id]?.done).length;
+  return Math.round(done/TOTAL_TASKS*100);
+}
+function classTaskStats(){
+  // aggregate across ALL students (class view)
+  let done=0, prog=0, none=0;
+  STUDENTS.forEach(s=>{
+    ALL_TASKS.forEach(tk=>{
+      const st=s.tasks[tk.id].status;
+      if(st==='Completed') done++;
+      else if(st==='In Progress') prog++;
+      else none++;
+    });
+  });
+  return {done,prog,none,total:ALL_TASKS.length*STUDENTS.length};
+}
+function classTopicPct(topicId){
+  const topic=TOPICS[topicId];
+  const done=STUDENTS.reduce((s,stu)=>s+topic.tasks.filter((_,i)=>stu.tasks[`t${topicId}_${i}`]?.done).length,0);
+  return Math.round(done/(topic.tasks.length*STUDENTS.length)*100);
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER HELPERS
+// ═══════════════════════════════════════════════════════════
+function statusPill(status){
+  if(status==='Completed') return `<span class="status-pill pill-done">✓ Completed</span>`;
+  if(status==='In Progress') return `<span class="status-pill pill-prog">⏳ In Progress</span>`;
+  return `<span class="status-pill pill-none">— Not Started</span>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// DASHBOARD PAGE
+// ═══════════════════════════════════════════════════════════
+function updateSummaryCards(){
+  const stats = classTaskStats();
+  const classDonePct = Math.round(stats.done/stats.total*100);
+  const overallPct   = Math.round(STUDENTS.reduce((s,st)=>s+studentOverallPct(st),0)/STUDENTS.length);
+
+  document.getElementById('tasks-card-val').textContent = `${stats.done} / ${stats.total}`;
+  document.getElementById('tasks-card-sub').textContent = `of ${stats.total} total tasks across 30 students`;
+  document.getElementById('tasks-badge').textContent    = classDonePct+'%';
+  document.getElementById('tasks-card-bar').style.width = classDonePct+'%';
+
+  const pl = progressLabel(overallPct);
+  document.getElementById('progress-card-val').textContent  = overallPct+'%';
+  document.getElementById('progress-card-sub').textContent  = 'Class average across all topics';
+  document.getElementById('progress-badge').textContent     = pl.label;
+  document.getElementById('progress-card-bar').style.width  = overallPct+'%';
+}
+
+function renderTopicsGrid(){
+  const grid = document.getElementById('topics-grid');
+  grid.innerHTML = TOPICS.map(tp=>{
+    const pct = classTopicPct(tp.id);
+    const done= STUDENTS.reduce((s,stu)=>s+tp.tasks.filter((_,i)=>stu.tasks[`t${tp.id}_${i}`]?.done).length,0);
+    const total= tp.tasks.length*STUDENTS.length;
+    return `<div class="topic-card">
+      <div class="topic-header">
+        <div class="topic-header-left">
+          <span class="topic-icon">${tp.icon}</span>
+          <span class="topic-name">${tp.name}</span>
+        </div>
+        <span class="topic-pct" style="color:${tp.color}">${pct}%</span>
+      </div>
+      <div class="topic-bar-wrap">
+        <div class="topic-bar" style="width:${pct}%;background:${tp.color}"></div>
+      </div>
+      <div class="topic-meta">${done} / ${total} tasks completed across all students &nbsp;·&nbsp; ${tp.tasks.length} tasks/student</div>
+    </div>`;
+  }).join('');
+}
+
+function getFilteredTasks(){
+  return ALL_TASKS.filter(tk=>{
+    if(activeFilters.topic!=='all' && String(tk.topicId)!==activeFilters.topic) return false;
+    return true;
+  });
+}
+function getFilteredTaskStates(tasks){
+  // get states for the viewed student or class average
+  const stuId = activeFilters.student;
+  if(stuId!=='all'){
+    const stu=STUDENTS.find(s=>String(s.id)===stuId);
+    if(!stu) return tasks.map(tk=>stu?stu.tasks[tk.id]:{status:'Not Started',done:false,date:''});
+    return tasks.map(tk=>stu.tasks[tk.id]);
+  }
+  // class: pick first student for reference display
+  return tasks.map(tk=>STUDENTS[0].tasks[tk.id]);
+}
+
+function renderChecklist(){
+  const tasks = getFilteredTasks();
+  // For dash checklist, show representative single student or class average
+  const stuId = activeFilters.student;
+  const stu = stuId!=='all' ? STUDENTS.find(s=>String(s.id)===stuId) : STUDENTS[0];
+
+  const filtered = tasks.filter(tk=>{
+    const st = stu.tasks[tk.id].status;
+    if(activeFilters.status==='all') return true;
+    return st===activeFilters.status;
+  });
+
+  const done=filtered.filter(tk=>stu.tasks[tk.id].done).length;
+  document.getElementById('checklist-meta').textContent=`${done} / ${filtered.length} shown`;
+
+  const tbody=document.getElementById('task-tbody');
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="6" class="empty-state">No tasks match current filters.</td></tr>`;return;}
+
+  tbody.innerHTML=filtered.map(tk=>{
+    const tp=TOPICS[tk.topicId];
+    const ts=stu.tasks[tk.id];
+    return `<tr>
+      <td><input type="checkbox" class="task-cb" ${ts.done?'checked':''} onchange="toggleTask('${stu.id}','${tk.id}',this)"/></td>
+      <td>${tk.title}</td>
+      <td class="hide-sm"><span class="task-topic-tag">${tp.icon} ${tp.name}</span></td>
+      <td class="hide-sm"><span class="task-type-tag">${tk.type}</span></td>
+      <td>${statusPill(ts.status)}</td>
+      <td class="hide-sm" style="color:#94a3b8;font-size:12px">${ts.date||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleTask(stuId, taskId, cb){
+  const stu = STUDENTS.find(s=>String(s.id)===String(stuId));
+  if(!stu) return;
+  const ts=stu.tasks[taskId];
+  ts.done=cb.checked;
+  if(ts.done){
+    ts.status='Completed';
+    if(!ts.date) ts.date=new Date().toLocaleDateString('en-MY',{day:'2-digit',month:'short',year:'numeric'});
+  } else {
+    ts.status='Not Started';
+    ts.date='';
+  }
+  refreshAll();
+}
+
+function refreshAll(){
+  updateSummaryCards();
+  renderTopicsGrid();
+  renderChecklist();
+  renderStudentTable();
+  renderTopicsPage();
+  renderProgressPage();
+}
+
+// ═══════════════════════════════════════════════════════════
+// FILTERS
+// ═══════════════════════════════════════════════════════════
+function populateStudentFilters(){
+  const fg=document.getElementById('student-filters');
+  const existing=fg.querySelector('.filter-btn');
+  // keep first (All Students) button, add individual
+  fg.innerHTML=`<button class="filter-btn active" onclick="setFilter('student','all',this)">All Students</button>`
+    +STUDENTS.map(s=>`<button class="filter-btn" onclick="setFilter('student','${s.id}',this)">${s.name.split(' ')[0]}</button>`).join('');
+}
+function setFilter(type, val, btn){
+  activeFilters[type]=val;
+  // update active class in that group
+  const groups={student:'student-filters',topic:'topic-filters'};
+  if(groups[type]){
+    document.getElementById(groups[type]).querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  } else {
+    btn.parentElement.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  }
+  btn.classList.add('active');
+  renderChecklist();
+}
+
+// ═══════════════════════════════════════════════════════════
+// STUDENTS PAGE
+// ═══════════════════════════════════════════════════════════
+function renderStudentTable(){
+  const q=(document.getElementById('stu-search')?.value||'').toLowerCase();
+  const sf=document.getElementById('stu-status-filter')?.value||'all';
+  const tf=document.getElementById('stu-topic-filter')?.value||'all';
+
+  let list=STUDENTS.filter(s=>{
+    if(q && !s.name.toLowerCase().includes(q)) return false;
+    const pct= tf==='all' ? studentOverallPct(s) : studentTopicPct(s,+tf);
+    const pl=progressLabel(pct);
+    if(sf!=='all' && pl.label!==sf) return false;
+    return true;
+  });
+
+  document.getElementById('stu-count-label').textContent=`${list.length} of ${STUDENTS.length} students`;
+
+  const tbody=document.getElementById('student-tbody');
+  if(!list.length){tbody.innerHTML=`<tr><td colspan="7" class="empty-state">No students match filters.</td></tr>`;return;}
+
+  tbody.innerHTML=list.map((s,i)=>{
+    const pct=studentOverallPct(s);
+    const pl=progressLabel(pct);
+    const done=ALL_TASKS.filter(tk=>s.tasks[tk.id].done).length;
+    const pend=TOTAL_TASKS-done;
+    const c=pctColor(pct);
+    return `<tr class="clickable" onclick="showStudentDetail(${s.id})">
+      <td style="color:#94a3b8;font-size:12px">${i+1}</td>
+      <td><div class="stu-name-cell">
+        <div class="stu-avatar" style="background:${s.color}">${initials(s.name)}</div>
+        <div><div style="font-weight:600">${s.name}</div><div style="font-size:11px;color:#94a3b8">${s.matric}</div></div>
+      </div></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="mini-bar-wrap"><div class="mini-bar" style="width:${pct}%;background:${c}"></div></div>
+          <span style="font-size:12px;font-weight:600;color:${c}">${pct}%</span>
+        </div>
+      </td>
+      <td><span class="status-dot ${pl.dot}"></span>${pl.label}</td>
+      <td style="font-weight:600;color:#16a34a">${done}</td>
+      <td style="font-weight:600;color:#94a3b8">${pend}</td>
+      <td><button onclick="event.stopPropagation();showStudentDetail(${s.id})" style="padding:4px 10px;border-radius:6px;border:1px solid #e2e8f0;background:#f8fafc;cursor:pointer;font-size:12px;color:#475569">View</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function showStudentDetail(id){
+  const stu=STUDENTS.find(s=>s.id===id);
+  if(!stu)return;
+  selectedStudentId=id;
+
+  const pct=studentOverallPct(stu);
+  const pl=progressLabel(pct);
+  const done=ALL_TASKS.filter(tk=>stu.tasks[tk.id].done).length;
+  const prog=ALL_TASKS.filter(tk=>stu.tasks[tk.id].status==='In Progress').length;
+  const none=ALL_TASKS.filter(tk=>stu.tasks[tk.id].status==='Not Started').length;
+
+  const topicRows=TOPICS.map(tp=>{
+    const p=studentTopicPct(stu,tp.id);
+    const tpl=progressLabel(p);
+    return `<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:13px">${tp.icon} ${tp.name}</span>
+        <span style="font-size:13px;font-weight:700;color:${tp.color}">${p}%</span>
+      </div>
+      <div class="topic-bar-wrap"><div class="topic-bar" style="width:${p}%;background:${tp.color}"></div></div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:2px"><span class="status-dot ${tpl.dot}"></span>${tpl.label}</div>
+    </div>`;
+  }).join('');
+
+  const incomplete=ALL_TASKS.filter(tk=>!stu.tasks[tk.id].done);
+  const incRows=incomplete.slice(0,12).map(tk=>{
+    const tp=TOPICS[tk.topicId];
+    const st=stu.tasks[tk.id].status;
+    return `<div class="inc-item">
+      <span>${tp.icon}</span>
+      <span class="inc-topic">[${tp.name}]</span>
+      <span>${tk.title}</span>
+      <span style="margin-left:auto">${statusPill(st)}</span>
+    </div>`;
+  }).join('');
+
+  const dv=document.getElementById('student-detail-view');
+  dv.innerHTML=`
+    <button class="back-btn" onclick="hideStudentDetail()">← Back to Students</button>
+    <div class="student-detail">
+      <div class="stu-detail-top">
+        <div class="stu-big-avatar" style="background:${stu.color}">${initials(stu.name)}</div>
+        <div class="stu-detail-info">
+          <h3>${stu.name}</h3>
+          <p>${stu.matric} &nbsp;·&nbsp; DIP Agrotechnology &nbsp;·&nbsp; Sem 1 2024/25</p>
+          <p style="margin-top:4px"><span class="status-dot ${pl.dot}"></span><strong>${pl.label}</strong> &nbsp;·&nbsp; Overall Progress: <strong style="color:${pctColor(pct)}">${pct}%</strong></p>
+        </div>
+      </div>
+      <div class="stu-stat-row">
+        <div class="stu-stat"><div class="val" style="color:#16a34a">${done}</div><div class="lbl">Completed</div></div>
+        <div class="stu-stat"><div class="val" style="color:#d97706">${prog}</div><div class="lbl">In Progress</div></div>
+        <div class="stu-stat"><div class="val" style="color:#94a3b8">${none}</div><div class="lbl">Not Started</div></div>
+        <div class="stu-stat"><div class="val" style="color:${pctColor(pct)}">${pct}%</div><div class="lbl">Overall %</div></div>
+      </div>
+      <div class="tag-label">Topic Breakdown</div>
+      ${topicRows}
+      <div class="tag-label" style="margin-top:18px">Incomplete Tasks <span style="font-size:11px;color:#94a3b8;font-weight:400">(${incomplete.length} remaining)</span></div>
+      <div class="incomplete-list">${incRows||'<div style="color:#16a34a;font-size:13px;padding:8px 0">✓ All tasks completed!</div>'}</div>
+    </div>`;
+
+  document.getElementById('student-list-view').style.display='none';
+  dv.style.display='block';
+}
+
+function hideStudentDetail(){
+  document.getElementById('student-list-view').style.display='';
+  document.getElementById('student-detail-view').style.display='none';
+  selectedStudentId=null;
+}
+
+// ═══════════════════════════════════════════════════════════
+// TASKS PAGE
+// ═══════════════════════════════════════════════════════════
+function renderTasksPage(){
+  const q=(document.getElementById('task-search')?.value||'').toLowerCase();
+  const tf=document.getElementById('task-topic-filter')?.value||'all';
+  const sf=document.getElementById('task-status-filter')?.value||'all';
+  // Show class representative (Student 0)
+  const stu=STUDENTS[0];
+
+  const tasks=ALL_TASKS.filter(tk=>{
+    if(q && !tk.title.toLowerCase().includes(q)) return false;
+    if(tf!=='all' && String(tk.topicId)!==tf) return false;
+    if(sf!=='all' && stu.tasks[tk.id].status!==sf) return false;
+    return true;
+  });
+
+  const done=tasks.filter(tk=>stu.tasks[tk.id].done).length;
+  document.getElementById('tasks-page-meta').textContent=`${done} / ${tasks.length} shown`;
+
+  const tbody=document.getElementById('tasks-page-tbody');
+  if(!tasks.length){tbody.innerHTML=`<tr><td colspan="6" class="empty-state">No tasks match.</td></tr>`;return;}
+  tbody.innerHTML=tasks.map(tk=>{
+    const tp=TOPICS[tk.topicId];
+    const ts=stu.tasks[tk.id];
+    return `<tr>
+      <td><input type="checkbox" class="task-cb" ${ts.done?'checked':''} onchange="toggleTask('${stu.id}','${tk.id}',this)"/></td>
+      <td>${tk.title}</td>
+      <td><span class="task-topic-tag">${tp.icon} ${tp.name}</span></td>
+      <td><span class="task-type-tag">${tk.type}</span></td>
+      <td>${statusPill(ts.status)}</td>
+      <td style="color:#94a3b8;font-size:12px">${ts.date||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// TOPICS PAGE
+// ═══════════════════════════════════════════════════════════
+function renderTopicsPage(){
+  const container=document.getElementById('topics-detail-container');
+  container.innerHTML=TOPICS.map(tp=>{
+    const pct=classTopicPct(tp.id);
+    const done=STUDENTS.reduce((s,stu)=>s+tp.tasks.filter((_,i)=>stu.tasks[`t${tp.id}_${i}`]?.done).length,0);
+    const total=tp.tasks.length*STUDENTS.length;
+    const taskRows=tp.tasks.map((tk,i)=>{
+      const tid=`t${tp.id}_${i}`;
+      const classDone=STUDENTS.filter(s=>s.tasks[tid].done).length;
+      const classPct=Math.round(classDone/STUDENTS.length*100);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f1f5f9">
+        <span style="font-size:12px;color:#94a3b8;width:22px">${i+1}.</span>
+        <span style="flex:1;font-size:13px">${tk.title}</span>
+        <span class="task-type-tag" style="flex-shrink:0">${tk.type}</span>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+          <div style="width:60px;height:5px;background:#f1f5f9;border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${classPct}%;background:${tp.color};border-radius:3px"></div>
+          </div>
+          <span style="font-size:11px;font-weight:600;color:${tp.color};width:30px">${classPct}%</span>
+        </div>
+        <span style="font-size:11px;color:#94a3b8;width:80px;text-align:right">${classDone}/${STUDENTS.length} students</span>
+      </div>`;
+    }).join('');
+    return `<div class="panel" style="margin-bottom:18px">
+      <div class="panel-head">
+        <div class="sec-title"><span class="icon">${tp.icon}</span> ${tp.name}</div>
+        <span style="font-size:13px;font-weight:700;color:${tp.color}">${pct}% &nbsp;·&nbsp; <span style="font-weight:400;color:#94a3b8;font-size:12px">${done}/${total} tasks done</span></span>
+      </div>
+      <div class="panel-body">
+        <div class="topic-bar-wrap" style="margin-bottom:12px"><div class="topic-bar" style="width:${pct}%;background:${tp.color}"></div></div>
+        ${taskRows}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// PROGRESS PAGE
+// ═══════════════════════════════════════════════════════════
+function renderProgressPage(){
+  const body=document.getElementById('progress-page-body');
+  const sorted=[...STUDENTS].sort((a,b)=>studentOverallPct(b)-studentOverallPct(a));
+  body.innerHTML=`
+    <div class="tag-label" style="margin-top:0">Class Average by Topic</div>
+    ${TOPICS.map(tp=>{
+      const pct=classTopicPct(tp.id);
+      return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+        <span style="width:180px;font-size:13px;flex-shrink:0">${tp.icon} ${tp.name}</span>
+        <div style="flex:1;height:10px;background:#f1f5f9;border-radius:5px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${tp.color};border-radius:5px;transition:width .4s"></div>
+        </div>
+        <span style="font-size:13px;font-weight:700;color:${tp.color};width:38px;text-align:right">${pct}%</span>
+      </div>`;
+    }).join('')}
+    <hr class="divider" style="margin:20px 0"/>
+    <div class="tag-label">Student Ranking (Overall Progress)</div>
+    ${sorted.map((s,i)=>{
+      const pct=studentOverallPct(s);
+      const pl=progressLabel(pct);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #f1f5f9">
+        <span style="width:22px;font-size:12px;color:#94a3b8;text-align:right">${i+1}</span>
+        <div class="stu-avatar" style="background:${s.color}">${initials(s.name)}</div>
+        <span style="flex:1;font-size:13px;font-weight:500">${s.name}</span>
+        <div style="width:100px;height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${pct}%;background:${pctColor(pct)};border-radius:3px"></div>
+        </div>
+        <span style="font-size:12px;font-weight:700;color:${pctColor(pct)};width:38px;text-align:right">${pct}%</span>
+        <span class="status-dot ${pl.dot}"></span><span style="font-size:12px;color:#64748b;width:110px">${pl.label}</span>
+      </div>`;
+    }).join('')}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ASSESSMENTS PAGE
+// ═══════════════════════════════════════════════════════════
+function renderAssessments(){
+  const quizTasks=ALL_TASKS.filter(tk=>tk.type==='Quiz'||tk.type==='Practical');
+  const html=quizTasks.map(tk=>{
+    const tp=TOPICS[tk.topicId];
+    const done=STUDENTS.filter(s=>s.tasks[tk.id].done).length;
+    const pct=Math.round(done/STUDENTS.length*100);
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f1f5f9">
+      <span style="font-size:18px">${tp.icon}</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600">${tk.title}</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:1px">${tp.name} &nbsp;·&nbsp; <span class="task-type-tag">${tk.type}</span></div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:13px;font-weight:700;color:${pctColor(pct)}">${pct}%</div>
+        <div style="font-size:11px;color:#94a3b8">${done}/${STUDENTS.length} done</div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('assess-list').innerHTML=html||'<div class="empty-state">No assessments.</div>';
+}
+
+// ═══════════════════════════════════════════════════════════
+// PAGE NAVIGATION
+// ═══════════════════════════════════════════════════════════
+const PAGE_TITLES={
+  dashboard:{t:'Dashboard Overview',s:'Biological Science · DIP Agrotechnology'},
+  students: {t:'Student Monitoring',s:'View and track individual student progress'},
+  tasks:    {t:'Task Management',   s:'All learning tasks and completion status'},
+  topics:   {t:'Learning Topics',   s:'Topic-by-topic breakdown and task details'},
+  progress: {t:'Progress Analytics',s:'Class ranking and overall performance metrics'},
+  assessments:{t:'Assessments',     s:'Quiz and practical task completion rates'},
+  settings: {t:'Settings',          s:'Course configuration'},
+};
+
+function showPage(id, el){
+  event && event.preventDefault();
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('active'));
+  el && el.classList.add('active');
+  const pt=PAGE_TITLES[id]||{t:'Dashboard',s:''};
+  document.getElementById('page-title').textContent=pt.t;
+  document.getElementById('page-sub').textContent=pt.s;
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+function init(){
+  populateStudentFilters();
+  updateSummaryCards();
+  renderTopicsGrid();
+  renderChecklist();
+  renderStudentTable();
+  renderTopicsPage();
+  renderProgressPage();
+  renderAssessments();
+  renderTasksPage();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
